@@ -53,9 +53,9 @@ export function GuideView() {
     };
 
     return (
-        <div className="h-screen flex flex-col bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900">
+        <div className="h-screen w-full overflow-hidden flex flex-col bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900">
             {/* Header */}
-            <div className="flex-shrink-0 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-6 py-4">
+            <div className="flex-shrink-0 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 md:px-6 py-4">
                 <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center">
                         <BookOpen className="w-6 h-6 text-white" />
@@ -72,8 +72,8 @@ export function GuideView() {
             </div>
 
             {/* Content */}
-            <div ref={contentRef} className="flex-1 overflow-y-auto flex justify-center">
-                <div className="w-full max-w-7xl p-8 space-y-8">
+            <div ref={contentRef} className="flex-1 overflow-y-auto">
+                <div className="w-full max-w-7xl mx-auto p-4 md:p-8 space-y-8">
                     {/* Section 1: Introduction */}
                     <section className="bg-white dark:bg-slate-900 rounded-2xl p-8 shadow-lg border border-slate-200 dark:border-slate-800">
                         <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4">

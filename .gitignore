@@ -23,6 +23,10 @@ dist-ssr
 *.sql
 database-*.sql
 
+# Documentation (except README.md)
+*.md
+!README.md
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

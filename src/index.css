@@ -1,0 +1,161 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@plugin "daisyui";
+
+:root {
+  color-scheme: light dark;
+}
+
+body {
+  @apply bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-50 antialiased;
+  margin: 0;
+  min-height: 100vh;
+}
+
+#root {
+  @apply h-screen w-full;
+}
+
+/* Smooth Animations */
+@keyframes expand-left {
+  from {
+    opacity: 0;
+    transform: scaleX(0);
+    transform-origin: right center;
+  }
+  to {
+    opacity: 1;
+    transform: scaleX(1);
+    transform-origin: right center;
+  }
+}
+
+@keyframes expand-right {
+  from {
+    opacity: 0;
+    transform: scaleX(0);
+    transform-origin: left center;
+  }
+  to {
+    opacity: 1;
+    transform: scaleX(1);
+    transform-origin: left center;
+  }
+}
+
+@keyframes expand-center {
+  from {
+    opacity: 0;
+    transform: scaleY(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+}
+
+@keyframes slide-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-expand-left {
+  animation: expand-left 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.animate-expand-right {
+  animation: expand-right 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.animate-expand-center {
+  animation: expand-center 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.animate-slide-in-up {
+  animation: slide-in-up 0.4s ease-out backwards;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.5s ease-out;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.3s ease-out;
+}
+
+/* Cally Calendar Styles */
+calendar-date {
+  display: block;
+  font-family: inherit;
+  width: 280px;
+}
+
+calendar-date table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+calendar-date th,
+calendar-date td {
+  text-align: center;
+  padding: 0.25rem;
+}
+
+calendar-date th {
+  @apply text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider py-2;
+}
+
+calendar-date td button {
+  @apply w-8 h-8 rounded-lg text-xs font-medium text-slate-900 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors;
+}
+
+calendar-date td button[aria-current="date"] {
+  @apply bg-blue-600 text-white hover:bg-blue-700;
+}
+
+calendar-date td button[aria-pressed="true"] {
+  @apply bg-gradient-to-br from-blue-500 to-blue-600 text-white ring-2 ring-blue-400 ring-offset-2 ring-offset-white dark:ring-offset-slate-800 shadow-lg shadow-blue-500/30;
+}
+
+calendar-date td button[disabled] {
+  @apply text-slate-400 dark:text-slate-600 cursor-not-allowed hover:bg-transparent;
+}
+
+calendar-date header {
+  @apply flex items-center justify-between px-3 py-2 border-b border-slate-200 dark:border-slate-700;
+}
+
+calendar-date header button {
+  @apply p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors;
+}
+
+calendar-date header h2 {
+  @apply text-sm font-semibold text-slate-900 dark:text-slate-100;
+}

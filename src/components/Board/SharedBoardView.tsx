@@ -10,7 +10,11 @@ import type { Database } from '../../types/supabase';
 type Board = Database['public']['Tables']['boards']['Row'] & { share_mode?: 'readonly' | 'edit' };
 type Task = Database['public']['Tables']['tasks']['Row'];
 
-export function SharedBoardView() {
+interface SharedBoardViewProps {
+    mode: 'readonly' | 'edit';
+}
+
+export function SharedBoardView({ mode }: SharedBoardViewProps) {
     const { boardId } = useParams<{ boardId: string }>();
     const navigate = useNavigate();
     const { setActiveBoardId, setTasks: setStoreTasks } = useStore();
@@ -22,10 +26,10 @@ export function SharedBoardView() {
 
     // Set active board ID for edit mode
     useEffect(() => {
-        if (boardId && board?.share_mode === 'edit') {
+        if (boardId && mode === 'edit') {
             setActiveBoardId(boardId);
         }
-    }, [boardId, board?.share_mode, setActiveBoardId]);
+    }, [boardId, mode, setActiveBoardId]);
 
     useEffect(() => {
         if (!boardId) return;
@@ -79,8 +83,8 @@ export function SharedBoardView() {
                 const loadedTasks = tasksData || [];
                 setTasks(loadedTasks);
                 
-                // Set tasks in store for edit mode (use board variable, not state)
-                if (board.share_mode === 'edit') {
+                // Set tasks in store for edit mode
+                if (mode === 'edit') {
                     console.log('Setting tasks in store for edit mode:', loadedTasks);
                     setStoreTasks(loadedTasks);
                 }
@@ -103,7 +107,7 @@ export function SharedBoardView() {
         if (!boardId || !board) return;
 
         // Skip real-time setup for edit mode - PriorityBoardView handles it
-        if (board.share_mode === 'edit') {
+        if (mode === 'edit') {
             console.log('Skipping realtime setup for edit mode - handled by PriorityBoardView');
             return;
         }
@@ -143,7 +147,7 @@ export function SharedBoardView() {
             console.log('Cleaning up shared board realtime');
             supabase.removeChannel(taskChannel);
         };
-    }, [boardId, board]);
+    }, [boardId, board, mode]);
 
     if (loading) {
         return (
@@ -161,7 +165,7 @@ export function SharedBoardView() {
     }
 
     // If edit mode, use PriorityBoardView
-    if (board.share_mode === 'edit') {
+    if (mode === 'edit') {
         return (
             <div className="h-screen flex flex-col bg-slate-50 dark:bg-slate-950">
                 <div className="h-16 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-6 flex items-center justify-between flex-shrink-0">

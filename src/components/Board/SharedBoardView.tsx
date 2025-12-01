@@ -32,32 +32,31 @@ export function SharedBoardView() {
 
         const loadSharedBoard = async () => {
             try {
-                const { data: boardData, error: boardError } = await supabase
-                    .from('boards')
-                    .select('*')
-                    .eq('id', boardId)
-                    .single<Board>();
+                // Use RPC function to bypass RLS for shared boards
+                const { data: boardData, error: boardError } = await (supabase.rpc as any)('get_shared_board', {
+                    board_id_param: boardId
+                });
 
                 if (boardError) throw boardError;
-                if (!boardData) throw new Error('Board not found');
+                if (!boardData || boardData.length === 0) throw new Error('Board not found');
                 
-                setBoard(boardData);
+                const board = boardData[0] as Board;
+                setBoard(board);
 
                 // Fetch owner information
-                if (boardData.owner_id) {
+                if (board.owner_id) {
                     const { data: ownerNameData } = await (supabase.rpc as any)('get_user_email_by_id', {
-                        user_id: boardData.owner_id
+                        user_id: board.owner_id
                     });
                     if (ownerNameData) {
                         setOwnerName(ownerNameData);
                     }
                 }
 
-                const { data: tasksData, error: tasksError } = await supabase
-                    .from('tasks')
-                    .select('*')
-                    .eq('board_id', boardId)
-                    .order('position');
+                // Use RPC function to get tasks for shared board
+                const { data: tasksData, error: tasksError } = await (supabase.rpc as any)('get_shared_board_tasks', {
+                    board_id_param: boardId
+                });
 
                 if (tasksError) throw tasksError;
                 setTasks(tasksData || []);
@@ -91,11 +90,9 @@ export function SharedBoardView() {
                 async () => {
                     // Refresh only when task changes
                     try {
-                        const { data: tasksData, error: tasksError } = await supabase
-                            .from('tasks')
-                            .select('*')
-                            .eq('board_id', boardId)
-                            .order('position');
+                        const { data: tasksData, error: tasksError } = await (supabase.rpc as any)('get_shared_board_tasks', {
+                            board_id_param: boardId
+                        });
 
                         if (!tasksError && tasksData) {
                             setTasks(tasksData);

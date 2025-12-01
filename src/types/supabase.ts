@@ -33,6 +33,8 @@ export interface Database {
                     owner_id: string
                     position: number
                     created_at: string
+                    readonly_token: string | null
+                    edit_token: string | null
                 }
                 Insert: {
                     id?: string
@@ -40,6 +42,8 @@ export interface Database {
                     owner_id: string
                     position?: number
                     created_at?: string
+                    readonly_token?: string | null
+                    edit_token?: string | null
                 }
                 Update: {
                     id?: string
@@ -47,6 +51,8 @@ export interface Database {
                     owner_id?: string
                     position?: number
                     created_at?: string
+                    readonly_token?: string | null
+                    edit_token?: string | null
                 }
             }
             columns: {

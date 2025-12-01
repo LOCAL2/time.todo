@@ -10,11 +10,7 @@ import type { Database } from '../../types/supabase';
 type Board = Database['public']['Tables']['boards']['Row'] & { share_mode?: 'readonly' | 'edit' };
 type Task = Database['public']['Tables']['tasks']['Row'];
 
-interface SharedBoardViewProps {
-    mode?: 'readonly' | 'edit';
-}
-
-export function SharedBoardView({ mode: propMode }: SharedBoardViewProps) {
+export function SharedBoardView() {
     const { boardId } = useParams<{ boardId: string }>();
     const navigate = useNavigate();
     const { setActiveBoardId, setTasks: setStoreTasks } = useStore();
@@ -24,7 +20,6 @@ export function SharedBoardView({ mode: propMode }: SharedBoardViewProps) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [mode, setMode] = useState<'readonly' | 'edit'>('readonly');
-    const [tokenValid, setTokenValid] = useState(false);
 
     // Set active board ID for edit mode
     useEffect(() => {
@@ -82,7 +77,6 @@ export function SharedBoardView({ mode: propMode }: SharedBoardViewProps) {
                 // Determine mode based on token
                 const determinedMode = isEditToken ? 'edit' : 'readonly';
                 setMode(determinedMode);
-                setTokenValid(true);
                 setBoard(board);
 
                 // Fetch owner information

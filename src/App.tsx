@@ -111,6 +111,7 @@ function App() {
           <Route path="/boards" element={session ? <Layout><div className="h-full flex items-center justify-center text-slate-500 dark:text-slate-400">Select a board to view tasks</div></Layout> : <Navigate to="/" replace />} />
           <Route path="/boards/:boardId" element={session ? <Layout><BoardRoute /></Layout> : <Navigate to="/" replace />} />
           <Route path="/settings" element={session ? <Layout><SettingsRoute /></Layout> : <Navigate to="/" replace />} />
+          {/* Shared board route - accessible without login */}
           <Route path="/shared/:boardId" element={<SharedBoardView />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

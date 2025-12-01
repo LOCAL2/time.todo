@@ -32,15 +32,26 @@ export function SharedBoardView() {
 
         const loadSharedBoard = async () => {
             try {
+                console.log('Loading shared board:', boardId);
+                
                 // Use RPC function to bypass RLS for shared boards
                 const { data: boardData, error: boardError } = await (supabase.rpc as any)('get_shared_board', {
                     board_id_param: boardId
                 });
 
-                if (boardError) throw boardError;
-                if (!boardData || boardData.length === 0) throw new Error('Board not found');
+                console.log('Board data:', boardData, 'Error:', boardError);
+
+                if (boardError) {
+                    console.error('Board error details:', boardError);
+                    throw boardError;
+                }
+                if (!boardData || boardData.length === 0) {
+                    console.error('No board data returned');
+                    throw new Error('Board not found');
+                }
                 
                 const board = boardData[0] as Board;
+                console.log('Board loaded:', board);
                 setBoard(board);
 
                 // Fetch owner information
@@ -58,12 +69,18 @@ export function SharedBoardView() {
                     board_id_param: boardId
                 });
 
-                if (tasksError) throw tasksError;
+                console.log('Tasks data:', tasksData, 'Error:', tasksError);
+
+                if (tasksError) {
+                    console.error('Tasks error details:', tasksError);
+                    throw tasksError;
+                }
                 setTasks(tasksData || []);
 
                 setLoading(false);
             } catch (err: any) {
                 console.error('Error loading shared board:', err);
+                console.error('Full error object:', JSON.stringify(err, null, 2));
                 setError(err.message || 'Failed to load board');
                 setLoading(false);
             }

@@ -17,13 +17,21 @@ export function ActiveUsers({ boardId }: ActiveUsersProps) {
     const [activeUsers, setActiveUsers] = useState<PresenceUser[]>([]);
 
     useEffect(() => {
-        if (!boardId || !session) return;
+        if (!boardId) return;
+        
+        // Generate anonymous user ID if no session
+        const userId = session?.user.id || `anon-${Math.random().toString(36).substr(2, 9)}`;
+        const username = session?.user.user_metadata?.full_name || 
+                        session?.user.user_metadata?.name || 
+                        session?.user.email?.split('@')[0] || 
+                        'Anonymous User';
+        const avatarUrl = session?.user.user_metadata?.avatar_url || null;
 
         const channelName = `board:${boardId}`;
         const channel = supabase.channel(channelName, {
             config: {
                 presence: {
-                    key: session.user.id,
+                    key: userId,
                 },
             },
         });
@@ -32,6 +40,7 @@ export function ActiveUsers({ boardId }: ActiveUsersProps) {
         channel
             .on('presence', { event: 'sync' }, () => {
                 const state = channel.presenceState();
+                console.log('Presence state:', state);
                 const users: PresenceUser[] = [];
                 
                 Object.keys(state).forEach((key) => {
@@ -45,27 +54,28 @@ export function ActiveUsers({ boardId }: ActiveUsersProps) {
                     });
                 });
 
+                console.log('Active users:', users);
                 setActiveUsers(users);
             })
             .subscribe(async (status) => {
+                console.log('Presence channel status:', status);
                 if (status === 'SUBSCRIBED') {
                     // Send current user's presence
-                    await channel.track({
-                        user_id: session.user.id,
-                        username: session.user.user_metadata?.full_name || 
-                                 session.user.user_metadata?.name || 
-                                 session.user.email?.split('@')[0] || 
-                                 'Anonymous',
-                        avatar_url: session.user.user_metadata?.avatar_url || null,
+                    const presenceData = {
+                        user_id: userId,
+                        username: username,
+                        avatar_url: avatarUrl,
                         online_at: new Date().toISOString(),
-                    });
+                    };
+                    console.log('Tracking presence:', presenceData);
+                    await channel.track(presenceData);
                 }
             });
 
         return () => {
             channel.unsubscribe();
         };
-    }, [boardId, session]);
+    }, [boardId]);
 
     if (activeUsers.length === 0) return null;
 

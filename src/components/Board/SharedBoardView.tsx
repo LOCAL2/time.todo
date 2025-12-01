@@ -13,7 +13,7 @@ type Task = Database['public']['Tables']['tasks']['Row'];
 export function SharedBoardView() {
     const { boardId } = useParams<{ boardId: string }>();
     const navigate = useNavigate();
-    const { setActiveBoardId } = useStore();
+    const { setActiveBoardId, setTasks: setStoreTasks } = useStore();
     const [board, setBoard] = useState<Board | null>(null);
     const [ownerName, setOwnerName] = useState<string>('');
     const [tasks, setTasks] = useState<Task[]>([]);
@@ -75,7 +75,14 @@ export function SharedBoardView() {
                     console.error('Tasks error details:', tasksError);
                     throw tasksError;
                 }
-                setTasks(tasksData || []);
+                
+                const loadedTasks = tasksData || [];
+                setTasks(loadedTasks);
+                
+                // Set tasks in store for edit mode
+                if (board.share_mode === 'edit') {
+                    setStoreTasks(loadedTasks);
+                }
 
                 setLoading(false);
             } catch (err: any) {

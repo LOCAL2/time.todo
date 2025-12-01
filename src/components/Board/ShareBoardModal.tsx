@@ -33,7 +33,7 @@ export function ShareBoardModal({ isOpen, onClose, boardId, boardTitle }: ShareB
                 .from('boards')
                 .select('readonly_token, edit_token')
                 .eq('id', boardId)
-                .single();
+                .single<{ readonly_token: string | null; edit_token: string | null }>();
 
             if (error) throw error;
             
@@ -60,7 +60,7 @@ export function ShareBoardModal({ isOpen, onClose, boardId, boardTitle }: ShareB
                 .update({
                     readonly_token: newReadonlyToken,
                     edit_token: newEditToken
-                })
+                } as any)
                 .eq('id', boardId);
 
             if (error) throw error;

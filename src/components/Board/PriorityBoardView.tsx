@@ -23,7 +23,11 @@ import type { Database } from '../../types/supabase';
 
 type Task = Database['public']['Tables']['tasks']['Row'];
 
-export function PriorityBoardView() {
+interface PriorityBoardViewProps {
+    isSharedMode?: boolean;
+}
+
+export function PriorityBoardView({ isSharedMode = false }: PriorityBoardViewProps) {
     const { 
         tasks, 
         activeBoardId, 
@@ -45,7 +49,15 @@ export function PriorityBoardView() {
             try {
                 setLoading(true);
                 
-                // Check if board exists in database
+                // Skip board existence check for shared mode
+                if (isSharedMode) {
+                    setBoardNotFound(false);
+                    await fetchBoardData(activeBoardId);
+                    setLoading(false);
+                    return;
+                }
+                
+                // Check if board exists in database (only for non-shared mode)
                 const { data: boardData, error } = await supabase
                     .from('boards')
                     .select('id')
@@ -71,7 +83,7 @@ export function PriorityBoardView() {
         };
 
         checkAndFetchBoard();
-    }, [activeBoardId, fetchBoardData]);
+    }, [activeBoardId, fetchBoardData, isSharedMode]);
 
     // Set up real-time subscriptions - only refresh when data changes
     useEffect(() => {

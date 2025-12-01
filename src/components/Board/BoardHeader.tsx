@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Search, Filter, Share2 } from 'lucide-react';
 import { useStore } from '../../store/useStore';
 import { ShareBoardModal } from './ShareBoardModal';
-import { ActiveUsers } from './ActiveUsers';
 
 export function BoardHeader() {
     const { boards, activeBoardId, searchQuery, setSearchQuery, filterPriority, setFilterPriority } = useStore();
@@ -20,9 +19,6 @@ export function BoardHeader() {
             <div className="h-14 md:h-16 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 md:px-6 flex items-center justify-end gap-2 md:gap-4">
                 {/* Right: Actions - Responsive */}
                 <div className="flex items-center gap-1 md:gap-3 flex-shrink-0">
-                    {/* Active Users */}
-                    {activeBoardId && <ActiveUsers boardId={activeBoardId} />}
-                    
                     {/* Share Button */}
                     <button
                         onClick={() => setIsShareModalOpen(true)}

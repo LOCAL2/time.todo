@@ -55,12 +55,12 @@ export function ShareBoardModal({ isOpen, onClose, boardId, boardTitle }: ShareB
             const newReadonlyToken = btoa(Math.random().toString()).substring(0, 32);
             const newEditToken = btoa(Math.random().toString()).substring(0, 32);
 
-            const { error } = await supabase
+            const { error } = await (supabase
                 .from('boards')
-                .update({
+                .update as any)({
                     readonly_token: newReadonlyToken,
                     edit_token: newEditToken
-                } as any)
+                })
                 .eq('id', boardId);
 
             if (error) throw error;

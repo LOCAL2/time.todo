@@ -10,11 +10,7 @@ import type { Database } from '../../types/supabase';
 type Board = Database['public']['Tables']['boards']['Row'] & { share_mode?: 'readonly' | 'edit' };
 type Task = Database['public']['Tables']['tasks']['Row'];
 
-interface SharedBoardViewProps {
-    mode?: 'readonly' | 'edit';
-}
-
-export function SharedBoardView(): JSX.Element {
+export function SharedBoardView() {
     const { boardId } = useParams<{ boardId: string }>();
     const navigate = useNavigate();
     const { setActiveBoardId, setTasks: setStoreTasks } = useStore();

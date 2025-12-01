@@ -49,10 +49,9 @@ export function PriorityBoardView({ isSharedMode = false }: PriorityBoardViewPro
             try {
                 setLoading(true);
                 
-                // Skip board existence check for shared mode
+                // Skip board fetch for shared mode (data already loaded by SharedBoardView)
                 if (isSharedMode) {
                     setBoardNotFound(false);
-                    await fetchBoardData(activeBoardId);
                     setLoading(false);
                     return;
                 }

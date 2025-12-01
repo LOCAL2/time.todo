@@ -79,8 +79,9 @@ export function SharedBoardView() {
                 const loadedTasks = tasksData || [];
                 setTasks(loadedTasks);
                 
-                // Set tasks in store for edit mode
+                // Set tasks in store for edit mode (use board variable, not state)
                 if (board.share_mode === 'edit') {
+                    console.log('Setting tasks in store for edit mode:', loadedTasks);
                     setStoreTasks(loadedTasks);
                 }
 

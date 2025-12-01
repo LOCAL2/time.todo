@@ -122,8 +122,7 @@ export function SharedBoardView() {
         loadSharedBoard();
     }, [boardId]);
 
-    // Set up real-time subscriptions for readonly mode only
-    // Edit mode uses store subscriptions via PriorityBoardView
+    // Set up real-time subscriptions for readonly mode
     useEffect(() => {
         if (!boardId || !board) return;
 
@@ -135,31 +134,49 @@ export function SharedBoardView() {
 
         console.log('Setting up realtime for shared board (readonly):', boardId);
 
-        // Subscribe to task changes for readonly mode
+        // Subscribe to task changes using store subscription
         const taskChannel = supabase
-            .channel(`shared-tasks-${boardId}`)
+            .channel(`shared-readonly-${boardId}`)
             .on(
                 'postgres_changes',
                 {
-                    event: '*',
+                    event: 'INSERT',
                     schema: 'public',
                     table: 'tasks',
                     filter: `board_id=eq.${boardId}`
                 },
-                async (payload) => {
-                    console.log('Shared board task change detected:', payload);
-                    // Refresh only when task changes
-                    try {
-                        const { data: tasksData, error: tasksError } = await (supabase.rpc as any)('get_shared_board_tasks', {
-                            board_id_param: boardId
-                        });
-
-                        if (!tasksError && tasksData) {
-                            setTasks(tasksData);
-                        }
-                    } catch (err) {
-                        console.error('Error refreshing tasks:', err);
-                    }
+                (payload) => {
+                    console.log('Task created (readonly):', payload);
+                    const newTask = payload.new as any;
+                    setTasks((prev) => [...prev, newTask]);
+                }
+            )
+            .on(
+                'postgres_changes',
+                {
+                    event: 'UPDATE',
+                    schema: 'public',
+                    table: 'tasks',
+                    filter: `board_id=eq.${boardId}`
+                },
+                (payload) => {
+                    console.log('Task updated (readonly):', payload);
+                    const updatedTask = payload.new as any;
+                    setTasks((prev) => prev.map(t => t.id === updatedTask.id ? updatedTask : t));
+                }
+            )
+            .on(
+                'postgres_changes',
+                {
+                    event: 'DELETE',
+                    schema: 'public',
+                    table: 'tasks',
+                    filter: `board_id=eq.${boardId}`
+                },
+                (payload) => {
+                    console.log('Task deleted (readonly):', payload);
+                    const deletedTask = payload.old as any;
+                    setTasks((prev) => prev.filter(t => t.id !== deletedTask.id));
                 }
             )
             .subscribe();

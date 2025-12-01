@@ -1,6 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { X, Link2, Copy, Check, Eye, Edit3 } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
 
 interface ShareBoardModalProps {
     isOpen: boolean;

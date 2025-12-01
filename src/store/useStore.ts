@@ -32,7 +32,6 @@ interface AppState {
 
     tasks: Task[];
     setTasks: (tasks: Task[] | ((tasks: Task[]) => Task[])) => void;
-    isSharedMode: () => boolean;
     createTask: (boardId: string, title: string, description?: string, priority?: string, dueDate?: string, status?: string, imageUrl?: string) => Promise<void>;
     updateTask: (taskId: string, updates: Partial<Task>) => Promise<void>;
     uploadImage: (file: File) => Promise<string | null>;
@@ -223,45 +222,10 @@ export const useStore = create<AppState>((set, get) => ({
     setTasks: (tasks) => set((state) => ({
         tasks: typeof tasks === 'function' ? tasks(state.tasks) : tasks
     })),
-    
-    // Helper to check if we're in shared mode (no session)
-    isSharedMode: () => {
-        const { session } = get();
-        return !session;
-    },
-    
     createTask: async (boardId, title, description, priority, dueDate, imageUrl, status = 'backlog') => {
-        const { tasks, addToast, isSharedMode } = get();
+        const { tasks, addToast } = get();
         const position = tasks.length > 0 ? Math.max(...tasks.map(t => t.position)) + 1 : 0;
 
-        // Use RPC for shared mode (anonymous users)
-        if (isSharedMode()) {
-            console.log('Creating task via RPC (shared mode)');
-            const { data, error } = await (supabase.rpc as any)('create_shared_board_task', {
-                board_id_param: boardId,
-                title_param: title,
-                description_param: description || null,
-                status_param: status,
-                priority_param: priority || null,
-                position_param: position,
-                due_date_param: dueDate || null,
-                image_url_param: imageUrl || null
-            });
-
-            if (error) {
-                console.error('Error creating task (RPC):', error);
-                addToast('ไม่สามารถสร้างงานได้', 'error');
-                return;
-            }
-
-            if (data && data.length > 0) {
-                set((state) => ({ tasks: [...state.tasks, data[0]] }));
-                addToast('สร้างงานสำเร็จ', 'success');
-            }
-            return;
-        }
-
-        // Normal mode (authenticated users)
         const { data, error } = await supabase
             .from('tasks')
             .insert({
@@ -288,35 +252,8 @@ export const useStore = create<AppState>((set, get) => ({
             addToast('สร้างงานสำเร็จ', 'success');
         }
     },
-    
     updateTask: async (taskId, updates) => {
         console.log('Updating task:', taskId, 'with:', updates);
-        const { isSharedMode, activeBoardId } = get();
-
-        // Use RPC for shared mode (anonymous users)
-        if (isSharedMode() && activeBoardId) {
-            console.log('Updating task via RPC (shared mode)');
-            const { data, error } = await (supabase.rpc as any)('update_shared_board_task', {
-                task_id_param: taskId,
-                board_id_param: activeBoardId,
-                updates: updates
-            });
-
-            if (error) {
-                console.error('Error updating task (RPC):', error);
-                throw error;
-            }
-
-            if (data && data.length > 0) {
-                console.log('Task updated successfully via RPC:', data[0]);
-                set((state) => ({
-                    tasks: state.tasks.map(t => t.id === taskId ? data[0] : t)
-                }));
-            }
-            return;
-        }
-
-        // Normal mode (authenticated users)
         const { error, data } = await supabase
             .from('tasks')
             .update(updates)
@@ -335,28 +272,6 @@ export const useStore = create<AppState>((set, get) => ({
         }
     },
     deleteTask: async (taskId) => {
-        const { isSharedMode, activeBoardId } = get();
-
-        // Use RPC for shared mode (anonymous users)
-        if (isSharedMode() && activeBoardId) {
-            console.log('Deleting task via RPC (shared mode)');
-            const { data, error } = await (supabase.rpc as any)('delete_shared_board_task', {
-                task_id_param: taskId,
-                board_id_param: activeBoardId
-            });
-
-            if (error) {
-                console.error('Error deleting task (RPC):', error);
-                return;
-            }
-
-            set((state) => ({
-                tasks: state.tasks.filter(t => t.id !== taskId)
-            }));
-            return;
-        }
-
-        // Normal mode (authenticated users)
         const { error } = await supabase
             .from('tasks')
             .delete()

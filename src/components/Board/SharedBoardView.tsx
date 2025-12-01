@@ -97,9 +97,11 @@ export function SharedBoardView() {
         loadSharedBoard();
     }, [boardId]);
 
-    // Set up real-time subscriptions - only refresh when data changes
+    // Set up real-time subscriptions for both readonly and edit modes
     useEffect(() => {
-        if (!boardId || !board || board.share_mode === 'edit') return;
+        if (!boardId || !board) return;
+
+        console.log('Setting up realtime for shared board:', boardId, 'mode:', board.share_mode);
 
         // Subscribe to task changes
         const taskChannel = supabase
@@ -112,7 +114,8 @@ export function SharedBoardView() {
                     table: 'tasks',
                     filter: `board_id=eq.${boardId}`
                 },
-                async () => {
+                async (payload) => {
+                    console.log('Shared board task change detected:', payload);
                     // Refresh only when task changes
                     try {
                         const { data: tasksData, error: tasksError } = await (supabase.rpc as any)('get_shared_board_tasks', {
@@ -121,6 +124,10 @@ export function SharedBoardView() {
 
                         if (!tasksError && tasksData) {
                             setTasks(tasksData);
+                            // Update store for edit mode
+                            if (board.share_mode === 'edit') {
+                                setStoreTasks(tasksData);
+                            }
                         }
                     } catch (err) {
                         console.error('Error refreshing tasks:', err);
@@ -130,9 +137,10 @@ export function SharedBoardView() {
             .subscribe();
 
         return () => {
+            console.log('Cleaning up shared board realtime');
             supabase.removeChannel(taskChannel);
         };
-    }, [boardId, board]);
+    }, [boardId, board, setStoreTasks]);
 
     if (loading) {
         return (

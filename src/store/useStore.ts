@@ -248,7 +248,8 @@ export const useStore = create<AppState>((set, get) => ({
         }
 
         if (data) {
-            set((state) => ({ tasks: [...state.tasks, data] }));
+            // ไม่ต้องเพิ่ม task เข้า store ที่นี่
+            // ให้ real-time subscription จัดการแทน เพื่อป้องกัน duplicate
             addToast('สร้างงานสำเร็จ', 'success');
         }
     },
@@ -430,10 +431,16 @@ export const useStore = create<AppState>((set, get) => ({
 
                     const newTask = payload.new as Task;
 
-                    // Add the new task to the store
-                    set((state) => ({
-                        tasks: [...state.tasks, newTask]
-                    }));
+                    // Add the new task to the store (check for duplicates first)
+                    set((state) => {
+                        // ถ้า task มีอยู่แล้ว ไม่ต้องเพิ่ม
+                        if (state.tasks.some(t => t.id === newTask.id)) {
+                            return state;
+                        }
+                        return {
+                            tasks: [...state.tasks, newTask]
+                        };
+                    });
                 }
             )
             .on(

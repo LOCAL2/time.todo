@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { X, Link2, Copy, Check, Eye, Edit3 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { X, Link2, Copy, Check, Eye, Edit3, RefreshCw } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
 
 interface ShareBoardModalProps {
     isOpen: boolean;
@@ -11,9 +12,67 @@ interface ShareBoardModalProps {
 export function ShareBoardModal({ isOpen, onClose, boardId, boardTitle }: ShareBoardModalProps) {
     const [copiedReadonly, setCopiedReadonly] = useState(false);
     const [copiedEdit, setCopiedEdit] = useState(false);
+    const [readonlyToken, setReadonlyToken] = useState<string>('');
+    const [editToken, setEditToken] = useState<string>('');
+    const [loading, setLoading] = useState(true);
     
-    const readonlyUrl = `${window.location.origin}/shared/${boardId}`;
-    const editUrl = `${window.location.origin}/shared/${boardId}/edit`;
+    const readonlyUrl = readonlyToken ? `${window.location.origin}/shared/${boardId}?token=${readonlyToken}` : '';
+    const editUrl = editToken ? `${window.location.origin}/shared/${boardId}?token=${editToken}` : '';
+
+    // Load tokens when modal opens
+    useEffect(() => {
+        if (isOpen && boardId) {
+            loadTokens();
+        }
+    }, [isOpen, boardId]);
+
+    const loadTokens = async () => {
+        setLoading(true);
+        try {
+            const { data, error } = await supabase
+                .from('boards')
+                .select('readonly_token, edit_token')
+                .eq('id', boardId)
+                .single();
+
+            if (error) throw error;
+            
+            if (data) {
+                setReadonlyToken(data.readonly_token || '');
+                setEditToken(data.edit_token || '');
+            }
+        } catch (err) {
+            console.error('Error loading tokens:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const regenerateTokens = async () => {
+        setLoading(true);
+        try {
+            // Generate new tokens
+            const newReadonlyToken = btoa(Math.random().toString()).substring(0, 32);
+            const newEditToken = btoa(Math.random().toString()).substring(0, 32);
+
+            const { error } = await supabase
+                .from('boards')
+                .update({
+                    readonly_token: newReadonlyToken,
+                    edit_token: newEditToken
+                })
+                .eq('id', boardId);
+
+            if (error) throw error;
+
+            setReadonlyToken(newReadonlyToken);
+            setEditToken(newEditToken);
+        } catch (err) {
+            console.error('Error regenerating tokens:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handleCopyReadonly = async () => {
         try {
@@ -64,6 +123,12 @@ export function ShareBoardModal({ isOpen, onClose, boardId, boardTitle }: ShareB
                 </div>
 
                 <div className="p-6 space-y-4">
+                    {loading ? (
+                        <div className="flex items-center justify-center py-8">
+                            <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                        </div>
+                    ) : (
+                        <>
                     {/* Readonly Link */}
                     <div>
                         <div className="flex items-center gap-2 mb-2">
@@ -141,9 +206,21 @@ export function ShareBoardModal({ isOpen, onClose, boardId, boardTitle }: ShareB
                     {/* Info Box */}
                     <div className="rounded-lg p-4 border bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900">
                         <p className="text-sm text-amber-900 dark:text-amber-300">
-                            <strong>หมายเหตุ:</strong> ใช้ลิงก์ที่เหมาะสมตามสิทธิ์ที่ต้องการให้ผู้อื่น ลิงก์ทั้งสองแยกกันและใช้งานได้พร้อมกัน
+                            <strong>หมายเหตุ:</strong> ลิงก์ทั้งสองมี token ที่แยกกัน ใครมี token ก็จะได้สิทธิ์ตาม token นั้น
                         </p>
                     </div>
+
+                    {/* Regenerate Tokens Button */}
+                    <button
+                        onClick={regenerateTokens}
+                        disabled={loading}
+                        className="w-full px-4 py-2.5 bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+                    >
+                        <RefreshCw className="w-4 h-4" />
+                        สร้าง Token ใหม่ (ลิงก์เก่าจะใช้ไม่ได้)
+                    </button>
+                    </>
+                    )}
                 </div>
 
                 <div className="p-6 border-t border-slate-200 dark:border-slate-800">

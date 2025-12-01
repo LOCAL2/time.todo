@@ -11,10 +11,10 @@ type Board = Database['public']['Tables']['boards']['Row'] & { share_mode?: 'rea
 type Task = Database['public']['Tables']['tasks']['Row'];
 
 interface SharedBoardViewProps {
-    mode: 'readonly' | 'edit';
+    mode?: 'readonly' | 'edit';
 }
 
-export function SharedBoardView({ mode }: SharedBoardViewProps) {
+export function SharedBoardView({ mode: propMode }: SharedBoardViewProps) {
     const { boardId } = useParams<{ boardId: string }>();
     const navigate = useNavigate();
     const { setActiveBoardId, setTasks: setStoreTasks } = useStore();
@@ -23,6 +23,8 @@ export function SharedBoardView({ mode }: SharedBoardViewProps) {
     const [tasks, setTasks] = useState<Task[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [mode, setMode] = useState<'readonly' | 'edit'>('readonly');
+    const [tokenValid, setTokenValid] = useState(false);
 
     // Set active board ID for edit mode
     useEffect(() => {
@@ -37,6 +39,16 @@ export function SharedBoardView({ mode }: SharedBoardViewProps) {
         const loadSharedBoard = async () => {
             try {
                 console.log('Loading shared board:', boardId);
+                
+                // Get token from URL
+                const urlParams = new URLSearchParams(window.location.search);
+                const token = urlParams.get('token');
+                
+                if (!token) {
+                    setError('Missing share token');
+                    setLoading(false);
+                    return;
+                }
                 
                 // Use RPC function to bypass RLS for shared boards
                 const { data: boardData, error: boardError } = await (supabase.rpc as any)('get_shared_board', {
@@ -56,6 +68,21 @@ export function SharedBoardView({ mode }: SharedBoardViewProps) {
                 
                 const board = boardData[0] as Board;
                 console.log('Board loaded:', board);
+                
+                // Validate token
+                const isReadonlyToken = board.readonly_token === token;
+                const isEditToken = board.edit_token === token;
+                
+                if (!isReadonlyToken && !isEditToken) {
+                    setError('Invalid share token');
+                    setLoading(false);
+                    return;
+                }
+                
+                // Determine mode based on token
+                const determinedMode = isEditToken ? 'edit' : 'readonly';
+                setMode(determinedMode);
+                setTokenValid(true);
                 setBoard(board);
 
                 // Fetch owner information
@@ -84,7 +111,7 @@ export function SharedBoardView({ mode }: SharedBoardViewProps) {
                 setTasks(loadedTasks);
                 
                 // Set tasks in store for edit mode
-                if (mode === 'edit') {
+                if (determinedMode === 'edit') {
                     console.log('Setting tasks in store for edit mode:', loadedTasks);
                     setStoreTasks(loadedTasks);
                 }

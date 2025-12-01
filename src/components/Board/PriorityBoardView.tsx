@@ -16,6 +16,7 @@ import { BacklogSection } from './BacklogSection';
 import { PriorityQueueSection } from './PriorityQueueSection';
 import { CompletedSection } from './CompletedSection';
 import { TaskCard } from './TaskCard';
+import { BoardNotFound } from './BoardNotFound';
 import { useStore } from '../../store/useStore';
 import { supabase } from '../../lib/supabase';
 import type { Database } from '../../types/supabase';
@@ -33,12 +34,43 @@ export function PriorityBoardView() {
         filterPriority
     } = useStore();
     const [activeTask, setActiveTask] = useState<Task | null>(null);
+    const [boardNotFound, setBoardNotFound] = useState(false);
+    const [loading, setLoading] = useState(true);
 
-    // Fetch board data when board loads
+    // Fetch board data and check if board exists
     useEffect(() => {
-        if (activeBoardId) {
-            fetchBoardData(activeBoardId);
-        }
+        if (!activeBoardId) return;
+
+        const checkAndFetchBoard = async () => {
+            try {
+                setLoading(true);
+                
+                // Check if board exists in database
+                const { data: boardData, error } = await supabase
+                    .from('boards')
+                    .select('id')
+                    .eq('id', activeBoardId)
+                    .single();
+
+                if (error || !boardData) {
+                    // Board doesn't exist
+                    setBoardNotFound(true);
+                    setLoading(false);
+                    return;
+                }
+
+                // Board exists, fetch data
+                setBoardNotFound(false);
+                await fetchBoardData(activeBoardId);
+                setLoading(false);
+            } catch (err) {
+                console.error('Error checking board:', err);
+                setBoardNotFound(true);
+                setLoading(false);
+            }
+        };
+
+        checkAndFetchBoard();
     }, [activeBoardId, fetchBoardData]);
 
     // Set up real-time subscriptions - only refresh when data changes
@@ -216,6 +248,23 @@ export function PriorityBoardView() {
             status: overSection,
             position: newPosition 
         });
+    }
+
+    // Show loading state
+    if (loading) {
+        return (
+            <div className="h-full w-full flex items-center justify-center bg-slate-950">
+                <div className="text-center">
+                    <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+                    <p className="text-slate-400">กำลังโหลดบอร์ด...</p>
+                </div>
+            </div>
+        );
+    }
+
+    // Show 404 if board not found
+    if (boardNotFound) {
+        return <BoardNotFound />;
     }
 
     return (

@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Eye, ArrowLeft, Edit3 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { PriorityBoardView } from './PriorityBoardView';
+import { BoardNotFound } from './BoardNotFound';
 import { useStore } from '../../store/useStore';
 import type { Database } from '../../types/supabase';
 
@@ -123,28 +124,7 @@ export function SharedBoardView() {
     }
 
     if (error || !board) {
-        return (
-            <div className="h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
-                <div className="text-center max-w-md">
-                    <div className="w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <Eye className="w-8 h-8 text-red-600" />
-                    </div>
-                    <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-2">
-                        ไม่พบบอร์ด
-                    </h1>
-                    <p className="text-slate-600 dark:text-slate-400 mb-6">
-                        {error || 'บอร์ดนี้ไม่มีอยู่หรือคุณไม่มีสิทธิ์เข้าถึง'}
-                    </p>
-                    <button
-                        onClick={() => navigate('/')}
-                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors inline-flex items-center gap-2"
-                    >
-                        <ArrowLeft className="w-4 h-4" />
-                        กลับหน้าหลัก
-                    </button>
-                </div>
-            </div>
-        );
+        return <BoardNotFound />;
     }
 
     // If edit mode, use PriorityBoardView

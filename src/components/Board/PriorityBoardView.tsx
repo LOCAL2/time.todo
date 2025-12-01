@@ -35,7 +35,10 @@ export function PriorityBoardView({ isSharedMode = false }: PriorityBoardViewPro
         updateTask, 
         setTasks, 
         searchQuery, 
-        filterPriority
+        filterPriority,
+        subscribeToTasks,
+        subscribeToColumns,
+        subscribeToBoard
     } = useStore();
     const [activeTask, setActiveTask] = useState<Task | null>(null);
     const [boardNotFound, setBoardNotFound] = useState(false);
@@ -84,60 +87,24 @@ export function PriorityBoardView({ isSharedMode = false }: PriorityBoardViewPro
         checkAndFetchBoard();
     }, [activeBoardId, fetchBoardData, isSharedMode]);
 
-    // Set up real-time subscriptions - only refresh when data changes
+    // Set up real-time subscriptions using store subscriptions
     useEffect(() => {
         if (!activeBoardId) return;
 
-        console.log('Setting up realtime subscriptions for board:', activeBoardId);
+        console.log('Setting up realtime subscriptions for board:', activeBoardId, 'isSharedMode:', isSharedMode);
 
-        // Subscribe to task changes
-        const taskChannel = supabase
-            .channel(`tasks-${activeBoardId}`)
-            .on(
-                'postgres_changes',
-                {
-                    event: '*',
-                    schema: 'public',
-                    table: 'tasks',
-                    filter: `board_id=eq.${activeBoardId}`
-                },
-                (payload) => {
-                    console.log('Task change detected:', payload);
-                    // Refresh only when task changes
-                    fetchBoardData(activeBoardId);
-                }
-            )
-            .subscribe((status) => {
-                console.log('Task subscription status:', status);
-            });
-
-        // Subscribe to column changes
-        const columnChannel = supabase
-            .channel(`columns-${activeBoardId}`)
-            .on(
-                'postgres_changes',
-                {
-                    event: '*',
-                    schema: 'public',
-                    table: 'columns',
-                    filter: `board_id=eq.${activeBoardId}`
-                },
-                (payload) => {
-                    console.log('Column change detected:', payload);
-                    // Refresh only when column changes
-                    fetchBoardData(activeBoardId);
-                }
-            )
-            .subscribe((status) => {
-                console.log('Column subscription status:', status);
-            });
+        // Use store's real-time subscriptions for both shared and non-shared modes
+        const cleanupTasks = subscribeToTasks(activeBoardId);
+        const cleanupColumns = subscribeToColumns(activeBoardId);
+        const cleanupBoard = subscribeToBoard(activeBoardId);
 
         return () => {
             console.log('Cleaning up realtime subscriptions');
-            supabase.removeChannel(taskChannel);
-            supabase.removeChannel(columnChannel);
+            cleanupTasks();
+            cleanupColumns();
+            cleanupBoard();
         };
-    }, [activeBoardId, fetchBoardData]);
+    }, [activeBoardId, subscribeToTasks, subscribeToColumns, subscribeToBoard, isSharedMode]);
 
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -222,14 +189,19 @@ export function PriorityBoardView({ isSharedMode = false }: PriorityBoardViewPro
             // ใช้ tasks จาก state ปัจจุบัน (หลัง onDragOver อัพเดทแล้ว)
             const currentPriorityTasks = tasks.filter(t => t.status === 'priority');
             
+            console.log('Updating positions for priority queue tasks:', currentPriorityTasks.map(t => ({ id: t.id, title: t.title, position: t.position })));
+            
             // บันทึก position ของทุก task ใน priority queue ลง database
             const updates = currentPriorityTasks.map((t, index) => {
+                console.log(`Updating task ${t.id} (${t.title}) to position ${index}`);
                 return updateTask(t.id, { position: index });
             });
             
             // รอให้ทุก update เสร็จ
             Promise.all(updates).then(() => {
-                console.log('All positions updated');
+                console.log('All positions updated successfully');
+            }).catch((error) => {
+                console.error('Error updating positions:', error);
             });
             
             return;
@@ -245,6 +217,8 @@ export function PriorityBoardView({ isSharedMode = false }: PriorityBoardViewPro
             newPosition = priorityTasksCount;
         }
 
+        console.log(`Moving task ${taskId} (${task.title}) to section ${overSection} with position ${newPosition}`);
+
         // Optimistic update - อัพเดท UI ทันทีก่อน
         setTasks((currentTasks: Task[]) => {
             return currentTasks.map(t => 
@@ -258,6 +232,10 @@ export function PriorityBoardView({ isSharedMode = false }: PriorityBoardViewPro
         updateTask(taskId, { 
             status: overSection,
             position: newPosition 
+        }).then(() => {
+            console.log(`Task ${taskId} position persisted to database`);
+        }).catch((error) => {
+            console.error(`Error persisting task ${taskId} position:`, error);
         });
     }
 

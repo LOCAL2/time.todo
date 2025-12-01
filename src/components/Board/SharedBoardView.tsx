@@ -97,13 +97,20 @@ export function SharedBoardView() {
         loadSharedBoard();
     }, [boardId]);
 
-    // Set up real-time subscriptions for both readonly and edit modes
+    // Set up real-time subscriptions for readonly mode only
+    // Edit mode uses store subscriptions via PriorityBoardView
     useEffect(() => {
         if (!boardId || !board) return;
 
-        console.log('Setting up realtime for shared board:', boardId, 'mode:', board.share_mode);
+        // Skip real-time setup for edit mode - PriorityBoardView handles it
+        if (board.share_mode === 'edit') {
+            console.log('Skipping realtime setup for edit mode - handled by PriorityBoardView');
+            return;
+        }
 
-        // Subscribe to task changes
+        console.log('Setting up realtime for shared board (readonly):', boardId);
+
+        // Subscribe to task changes for readonly mode
         const taskChannel = supabase
             .channel(`shared-tasks-${boardId}`)
             .on(
@@ -124,10 +131,6 @@ export function SharedBoardView() {
 
                         if (!tasksError && tasksData) {
                             setTasks(tasksData);
-                            // Update store for edit mode
-                            if (board.share_mode === 'edit') {
-                                setStoreTasks(tasksData);
-                            }
                         }
                     } catch (err) {
                         console.error('Error refreshing tasks:', err);
@@ -140,7 +143,7 @@ export function SharedBoardView() {
             console.log('Cleaning up shared board realtime');
             supabase.removeChannel(taskChannel);
         };
-    }, [boardId, board, setStoreTasks]);
+    }, [boardId, board]);
 
     if (loading) {
         return (

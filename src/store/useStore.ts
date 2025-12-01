@@ -254,15 +254,18 @@ export const useStore = create<AppState>((set, get) => ({
     },
     updateTask: async (taskId, updates) => {
         console.log('Updating task:', taskId, 'with:', updates);
-        const { error } = await supabase
+        const { error, data } = await supabase
             .from('tasks')
             .update(updates)
-            .eq('id', taskId);
+            .eq('id', taskId)
+            .select()
+            .single();
 
         if (error) {
             console.error('Error updating task:', error);
+            throw error;
         } else {
-            console.log('Task updated successfully');
+            console.log('Task updated successfully in database:', data);
             set((state) => ({
                 tasks: state.tasks.map(t => t.id === taskId ? { ...t, ...updates } : t)
             }));

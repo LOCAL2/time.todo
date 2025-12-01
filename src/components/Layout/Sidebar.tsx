@@ -6,12 +6,13 @@ import type { DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, useSortable, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useStore } from '../../store/useStore';
+import { supabase } from '../../lib/supabase';
 import { CreateBoardModal } from './CreateBoardModal';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { appConfig } from '../../config/app';
 import type { BoardWithOwnership } from '../../types/supabase';
 
-function SortableBoardItem({ board, isActive, onClick, onDelete }: { board: BoardWithOwnership; isActive: boolean; onClick: () => void; onDelete: () => void }) {
+function SortableBoardItem({ board, isActive, onClick, onDelete, status }: { board: BoardWithOwnership; isActive: boolean; onClick: () => void; onDelete: () => void; status: 'completed' | 'in-progress' | 'not-started' }) {
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const {
         attributes,
@@ -42,7 +43,11 @@ function SortableBoardItem({ board, isActive, onClick, onDelete }: { board: Boar
                         : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200'
                     }`}
             >
-                <span className="w-2 h-2 rounded-full bg-current opacity-75" />
+                <span className={`w-2 h-2 rounded-full ${
+                    status === 'completed' ? 'bg-green-500' : 
+                    status === 'in-progress' ? 'bg-yellow-500' : 
+                    'bg-red-500'
+                }`} />
                 <div className="flex-1 min-w-0">
                     <div className="truncate">{board.title}</div>
                 </div>
@@ -92,6 +97,73 @@ export function Sidebar() {
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     const isSettingsActive = location.pathname === '/settings';
+
+    // Store board statuses
+    const [boardStatuses, setBoardStatuses] = useState<Record<string, 'completed' | 'in-progress' | 'not-started'>>({});
+
+    // Fetch task counts for all boards
+    const fetchBoardStatuses = async () => {
+        if (!session || boards.length === 0) return;
+
+        const statuses: Record<string, 'completed' | 'in-progress' | 'not-started'> = {};
+
+        for (const board of boards) {
+            const { data: boardTasks } = await supabase
+                .from('tasks')
+                .select('status')
+                .eq('board_id', board.id);
+
+            if (!boardTasks || boardTasks.length === 0) {
+                statuses[board.id] = 'not-started';
+            } else {
+                const completedCount = boardTasks.filter((t: any) => t.status === 'completed').length;
+                const totalCount = boardTasks.length;
+
+                if (completedCount === totalCount) {
+                    statuses[board.id] = 'completed';
+                } else if (completedCount > 0) {
+                    statuses[board.id] = 'in-progress';
+                } else {
+                    statuses[board.id] = 'not-started';
+                }
+            }
+        }
+
+        setBoardStatuses(statuses);
+    };
+
+    useEffect(() => {
+        fetchBoardStatuses();
+    }, [boards, session]);
+
+    // Subscribe to task changes for real-time updates
+    useEffect(() => {
+        if (!session) return;
+
+        const channel = supabase
+            .channel('sidebar-tasks')
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'tasks'
+                },
+                () => {
+                    // Refresh board statuses when any task changes
+                    fetchBoardStatuses();
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [session, boards]);
+
+    const getBoardStatus = (boardId: string): 'completed' | 'in-progress' | 'not-started' => {
+        return boardStatuses[boardId] || 'not-started';
+    };
 
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -160,6 +232,7 @@ export function Sidebar() {
                                     key={board.id}
                                     board={board}
                                     isActive={activeBoardId === board.id}
+                                    status={getBoardStatus(board.id)}
                                     onClick={() => navigate(`/boards/${board.id}`)}
                                     onDelete={() => {
                                         deleteBoard(board.id);

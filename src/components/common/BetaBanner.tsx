@@ -16,24 +16,24 @@ export function BetaBanner() {
   };
 
   return (
-    <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-2 md:py-3 relative overflow-hidden">
-      {/* Animated background */}
-      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer" />
-      
-      <div className="relative flex items-center justify-between gap-3 max-w-7xl mx-auto">
-        <div className="flex items-center justify-center gap-2 md:gap-3 flex-1">
-          <Sparkles className="w-4 h-4 md:w-5 md:h-5 flex-shrink-0 animate-pulse" />
-          <p className="text-xs md:text-sm font-medium">
+    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 animate-slide-up">
+      <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-3 rounded-xl shadow-2xl relative overflow-hidden max-w-md">
+        {/* Animated background */}
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer" />
+        
+        <div className="relative flex items-center gap-3">
+          <Sparkles className="w-5 h-5 flex-shrink-0 animate-pulse" />
+          <p className="text-sm font-medium flex-1">
             เวอร์ชัน Beta - ฟีเจอร์บางอย่างอาจมีการเปลี่ยนแปลง
           </p>
+          <button
+            onClick={handleDismiss}
+            className="p-1 hover:bg-white/20 rounded-lg transition-colors flex-shrink-0"
+            aria-label="ปิด"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
-        <button
-          onClick={handleDismiss}
-          className="p-1 hover:bg-white/20 rounded-lg transition-colors flex-shrink-0"
-          aria-label="ปิด"
-        >
-          <X className="w-4 h-4" />
-        </button>
       </div>
     </div>
   );

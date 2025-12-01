@@ -1,8 +1,10 @@
-import { Settings, Moon, Sun, User } from 'lucide-react';
+import { Settings, Moon, Sun, User, Home } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useStore } from '../../store/useStore';
 import { supabase } from '../../lib/supabase';
 
 export function SettingsView() {
+    const navigate = useNavigate();
     const { theme, setTheme, session } = useStore();
 
     const handleLogout = async () => {
@@ -11,17 +13,26 @@ export function SettingsView() {
 
     return (
         <div className="h-full w-full overflow-y-auto bg-slate-50 dark:bg-slate-950">
-            <div className="max-w-4xl mx-auto p-8 animate-fade-in">
+            <div className="max-w-4xl mx-auto p-4 md:p-8 animate-fade-in">
                 {/* Header */}
                 <div className="mb-8">
-                    <div className="flex items-center gap-3 mb-2">
-                        <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center">
-                            <Settings className="w-6 h-6 text-white" />
+                    <div className="flex items-center justify-between gap-3 mb-2">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 md:w-12 md:h-12 bg-blue-600 rounded-xl flex items-center justify-center">
+                                <Settings className="w-5 h-5 md:w-6 md:h-6 text-white" />
+                            </div>
+                            <div>
+                                <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-slate-100">Settings</h1>
+                                <p className="text-sm text-slate-600 dark:text-slate-400">Manage your preferences</p>
+                            </div>
                         </div>
-                        <div>
-                            <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100">Settings</h1>
-                            <p className="text-slate-600 dark:text-slate-400">Manage your preferences</p>
-                        </div>
+                        <button
+                            onClick={() => navigate('/boards')}
+                            className="flex items-center gap-2 px-3 md:px-4 py-2 bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg font-medium transition-colors"
+                        >
+                            <Home className="w-4 h-4" />
+                            <span className="hidden sm:inline">หน้าหลัก</span>
+                        </button>
                     </div>
 
 

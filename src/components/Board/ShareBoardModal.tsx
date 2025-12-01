@@ -33,7 +33,7 @@ export function ShareBoardModal({ isOpen, onClose, boardId, boardTitle }: ShareB
                 .from('boards')
                 .select('readonly_token, edit_token')
                 .eq('id', boardId)
-                .single();
+                .single() as { data: { readonly_token: string | null; edit_token: string | null } | null; error: any };
 
             if (error) throw error;
             
@@ -55,8 +55,8 @@ export function ShareBoardModal({ isOpen, onClose, boardId, boardTitle }: ShareB
             const newReadonlyToken = btoa(Math.random().toString()).substring(0, 32);
             const newEditToken = btoa(Math.random().toString()).substring(0, 32);
 
-            const { error } = await supabase
-                .from('boards')
+            const { error } = await (supabase
+                .from('boards') as any)
                 .update({
                     readonly_token: newReadonlyToken,
                     edit_token: newEditToken
